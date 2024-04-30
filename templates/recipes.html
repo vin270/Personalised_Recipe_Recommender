@@ -9,39 +9,35 @@
         /* Add custom styles here if needed */
         .recipe-container {
             display: flex;
-            align-items: center;
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Center items horizontally */
             margin-bottom: 20px;
         }
 
         .recipe-image {
             width: 30%;
             height: auto;
-            margin-right: 20px;
-        }
-
-        .recipe-details {
-            flex: 1;
+            margin-bottom: 10px; /* Spacing between image and title */
         }
 
         .recipe-title {
             font-size: 20px;
-            margin-bottom: 10px;
+            text-align: center; /* Center the title */
         }
     </style>
 </head>
-<body>
-    <h2 style="text-align: center"><a href="/" style="text-decoration: none; color:#3498db">Recipes for you:</a></h2>
-    <div style="margin-left:35%;">
+{% extends 'base.html' %}
+{% block title %} Recipes Search {% endblock %}
+{% block body %}
+    <h2 style="text-align: center"><a href="/" style="text-decoration: none; color:#87d591">Recipes for you:</a></h2>
+    <div>
         {% for recipe in recipes %}
             <div class="recipe-container">
                 <img src="{{ recipe['image'] }}" class="recipe-image" alt="Recipe Image">
-                <div class="recipe-details">
-                    <h5 class="recipe-title"><a href="{{ url_for('recipe_details', recipe_id=recipe['id']) }}">{{ recipe['title'] }}</a></h5>
-                    <!-- Add more details as needed -->
-                </div>
+                <h3 class="recipe-title"><a href="{{ url_for('recipe_details', recipe_id=recipe['id']) }}">{{ recipe['title'] }}</a></h3>
+                <!-- Add more details as needed -->
             </div>
         {% endfor %}
     </div>
-    <!-- Add your footer or any other necessary body content here -->
-</body>
+{% endblock %}
 </html>

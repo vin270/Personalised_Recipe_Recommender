@@ -1,26 +1,25 @@
 {% extends 'base.html' %}
 {% block title %} Home {% endblock %}
 {% block body %}
-    <div style="text-align: center;">
-        <form action="/recommend" method="POST" style="margin-top: 20px;">
+    <div class="search-form-container">
+        <form action="/recommend" method="POST">
             <label for="user_input" style="font-size: 18px; margin-right: 10px;">Enter your ingredients:</label>
             <input type="text" id="user_input" name="user_input" required style="padding: 8px; font-size: 16px;">
-            <input type="submit" value="Get Recipe Recommendations" style="padding: 10px; font-size: 16px; background-color: #3498db; color: white; cursor: pointer;">
+            <input type="submit" value="Get Recipe Recommendations" style="padding: 10px; font-size: 16px; background-color: #87d591; color: white; cursor: pointer;">
         </form>
 
-        <!-- Button to get a random recipe -->
-        <form action="/random_recipe" method="GET" style="margin-top: 20px;">
-            <input type="submit" value="Get Random Recipe" style="padding: 10px; font-size: 16px; background-color: #27ae60; color: white; cursor: pointer;">
+        <!-- Random recipe button -->
+        <form action="/random_recipe" method="GET">
+            <input type="submit" value="Get Random Recipe" style="padding: 10px; font-size: 16px; background-color: #87d591; color: white; cursor: pointer;">
         </form>
-
-        {% if recipes %}
-            <h2 style="margin-top: 20px; color: #3498db;">Recommended Recipes:</h2>
-            <ul style="list-style: none; padding: 0;">
-                {% for recipe in recipes %}
-                    <li style="margin-bottom: 10px; font-size: 16px;">{{ recipe.title }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
     </div>
-{% endblock %}
 
+    {% if recipes %}
+        <h2 style="margin-top: 20px; color: #87d591; text-align: center;">Recommended Recipes:</h2>
+        <ul style="list-style: none; padding: 0; text-align: center;">
+            {% for recipe in recipes %}
+                <li style="margin-bottom: 10px; font-size: 16px;">{{ recipe.title }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

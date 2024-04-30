@@ -14,7 +14,7 @@ body {
 
 /* Header styles */
 h1 {
-    background-color: #3498db;
+    background-color: #87d591;
     color: #fff;
     padding: 20px;
 }
@@ -37,7 +37,7 @@ input[type="text"] {
 }
 
 input[type="submit"] {
-    background-color: #3498db;
+    background-color: #87d591;
     color: #fff;
     padding: 10px 20px;
     border: none;
@@ -49,6 +49,12 @@ input[type="submit"] {
 input[type="submit"]:hover {
     background-color: #2980b9;
 }
+
+label, input[type="text"] {
+    display: inline-block;
+    vertical-align: middle;
+}
+
 
 /* Recipe list styles */
 h2 {
@@ -87,7 +93,12 @@ footer {
     padding: 20px;
     background-color: rgba(255, 255, 255, 0.8);
     border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
+
 
 .search-form label, .search-form input, .search-form button {
     display: block;
@@ -102,7 +113,7 @@ footer {
 }
 
 .search-form button {
-    background-color: #3498db;
+    background-color: #87d591;
     color: #fff;
     padding: 10px 20px;
     border: none;
@@ -113,3 +124,11 @@ footer {
 .search-form button:hover {
     background-color: #2980b9;
 }
+
+.search-form-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+

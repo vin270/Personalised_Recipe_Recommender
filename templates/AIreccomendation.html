@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %} Recommended Recipes {% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>Recommended Recipes</h1>
+    <div class="recipe-list">
+        {% if recipes %}
+            {% for recipe in recipes %}
+            <div class="recipe-card">
+                <h2>{{ recipe.title }}</h2>
+                <p>{{ recipe.description }}</p>
+                <p>Prep Time: {{ recipe.prep_time }} minutes</p>
+                <p>Cook Time: {{ recipe.cook_time }} minutes</p>
+                <p>Servings: {{ recipe.servings }}</p>
+                <p>Ingredients:</p>
+                <ul>
+                    {% for ingredient in recipe.ingredients %}
+                    <li>{{ ingredient }}</li>
+                    {% endfor %}
+                </ul>
+                <p>Instructions:</p>
+                <ol>
+                    {% for step in recipe.instructions %}
+                    <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No recipes found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
