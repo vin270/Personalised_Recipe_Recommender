@@ -1,3 +1,6 @@
+{% extends 'base.html' %}
+{% block title %} Recipe Details {% endblock %}
+{% block body %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +10,11 @@
     <!-- Add your stylesheets or any other necessary head content here -->
 </head>
 <body>
+    <style>
+        body {
+            background-color: #89bbd7; /* Set your desired background color here */
+        }
+    </style>
     <h2 style="text-align: center">Recipe Details</h2>
     <div style="margin-left:35%;">
         <img src="{{ recipe_details['image'] }}" alt="Recipe Image" width="30%" height="30%">
@@ -19,9 +27,15 @@
             <input type="submit" value="Save Recipe">
         </form>
         
+        <form action="/like_recipe" method="post">
+            <input type="hidden" name="recipe_id" value="{{ recipe_details['id'] }}">
+            <input type="hidden" name="recipe_title" value="{{ recipe_details['title'] }}">
+            <input type="submit" value="Like Recipe">
+        </form>        
+
         <p>Preparation Time: {{ recipe_details['preparationMinutes'] }} minutes</p>
         <p>Cooking Time: {{ recipe_details['cookingMinutes'] }} minutes</p>
-        <p>Likes: {{ recipe_details['aggregateLikes'] }}</p>
+        <p>Likes: {{ total_likes }}</p>
         
         <!-- Display Ingredients -->
         <h3>Ingredients:</h3>
@@ -37,9 +51,7 @@
                 <li>{{ step['step'] }}</li>
             {% endfor %}
         </ol>
-        
-        <!-- Add more details or content as needed -->
     </div>
-    <!-- Add your footer or any other necessary body content here -->
 </body>
 </html>
+{% endblock %}

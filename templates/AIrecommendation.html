@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Recommendations</title>
+</head>
+<body>
+    <h1>AI Recommendations</h1>
+    <p>Hello, {{ username }}! Here are some recipe recommendations for you:</p>
+    <ul>
+        {% for recipe in recommended_recipes %}
+            <li>{{ recipe.title }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

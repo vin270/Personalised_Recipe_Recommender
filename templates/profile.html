@@ -1,11 +1,25 @@
 {% extends 'base.html' %}
 {% block title %} Profile {% endblock %}
 {% block body %}
-    <h2>Welcome, {{ username }}!</h2>
-    <h3>Saved Recipes:</h3>
-    <ul>
-        {% for recipe in saved_recipes %}
-            <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}">{{ recipe['title'] }}</a></li>
-        {% endfor %}
-    </ul>
+    <style>
+        body {
+            background-color: #89bbd7;
+            color: #fff;
+        }
+    </style>
+    <div class="page-container" style="padding: 20px;">
+        <h2>Welcome, {{ username }}!</h2>
+        <h3>Saved Recipes:</h3>
+        <ul>
+            {% for recipe in saved_recipes %}
+                <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}" style="color: #fff;">{{ recipe['title'] }}</a></li>
+            {% endfor %}
+        </ul>
+        <h3>Liked Recipes:</h3>
+        <ul>
+            {% for recipe in liked_recipes %}
+                <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}" style="color: #fff;">{{ recipe['title'] }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}

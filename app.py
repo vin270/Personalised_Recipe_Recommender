@@ -1,8 +1,20 @@
-from flask import Flask, render_template, request, jsonify
 import http.client
 import json
 from urllib.parse import quote
-from flask import redirect, url_for
+import logging
+import sqlite3
+
+import numpy as np
+import pandas as pd
+from sklearn.calibration import LabelEncoder
+from sklearn.model_selection import train_test_split
+import tensorflow as tf
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+
+import sys
+
+print(sys.executable)
 
 
 app = Flask(__name__)
@@ -106,7 +118,9 @@ def recipe_details(recipe_id):
             if name:
                 ingredients_with_quantities.append(name)
 
-    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities)
+    total_likes = get_total_likes_for_recipe(recipe_id)
+    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, total_likes=total_likes)
+
 
 
 @app.route('/random_recipe', methods=['GET'])
@@ -182,8 +196,8 @@ def random_recipe():
             if name:
                 ingredients_with_quantities.append(name)
 
-        
     return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities)
+
 
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
@@ -228,8 +242,6 @@ for row in rows:
 
 # Close the connection
 conn.close()
-
-
 # Close the connection
 conn.close()
 
@@ -272,10 +284,12 @@ def profile():
         user_id = get_user_id(username)  # Assuming you have implemented this function
         if user_id is not None:
             saved_recipes = get_saved_recipes(user_id)
-            return render_template('profile.html', username=username, saved_recipes=saved_recipes)
+            liked_recipes = get_liked_recipes(user_id)  # Fetch liked recipes
+            return render_template('profile.html', username=username, saved_recipes=saved_recipes, liked_recipes=liked_recipes)
         else:
-            return render_template('profile.html', username=username, saved_recipes=[])  # No recipes found for the user
+            return render_template('profile.html', username=username, saved_recipes=[], liked_recipes=[])  # No recipes found for the user
     return redirect(url_for('login'))
+
 
 
 @app.route('/logout')
@@ -329,9 +343,21 @@ def get_user_id(username):
 def save_user_recipe_to_database(user_id, recipe_title, recipe_id):
     conn = sqlite3.connect('saved_recipes.db')
     c = conn.cursor()
+    
+    # Check if the user has already saved the recipe
+    c.execute("SELECT * FROM saved_recipes WHERE user_id = ? AND recipe_id = ?", (user_id, recipe_id))
+    existing_recipe = c.fetchone()
+    if existing_recipe:
+        # User has already saved the recipe, return without saving again
+        conn.close()
+        return False
+    
+    # Insert new recipe record
     c.execute("INSERT INTO saved_recipes (user_id, recipe_title, recipe_id) VALUES (?, ?, ?)", (user_id, recipe_title, recipe_id))
     conn.commit()
     conn.close()
+    return True
+
 
 def get_saved_recipes(user_id):
     try:
@@ -383,7 +409,222 @@ def save_recipe():
             return render_template('error.html', error_message="An error occurred while saving the recipe.")
     else:
         return redirect(url_for('login'))
+    
 
+def like_recipe_for_user(user_id, recipe_title, recipe_id):
+    conn = sqlite3.connect('liked_recipes.db')
+    c = conn.cursor()
+
+    # Check if the user has already liked the recipe
+    c.execute("SELECT * FROM liked_recipes WHERE user_id = ? AND recipe_id = ?", (user_id, recipe_id))
+    existing_like = c.fetchone()
+    if existing_like:
+        # User has already liked the recipe, return without adding a new like
+        conn.close()
+        return
+    
+    # Insert new like record
+    c.execute("INSERT INTO liked_recipes (user_id, recipe_title, recipe_id) VALUES (?, ?, ?)", (user_id, recipe_title, recipe_id))
+    conn.commit()
+    conn.close()
+
+@app.route('/like_recipe', methods=['POST'])
+def like_recipe():
+    if 'username' in session:
+        username = session['username']
+        recipe_title = request.form.get('recipe_title')
+        recipe_id = request.form.get('recipe_id')
+
+
+        if not recipe_id:
+            return render_template('error.html', error_message="Invalid recipe ID.")
+
+        try:
+            # Get user ID from the database using the username
+            user_id = get_user_id(username)
+            if user_id is None:
+                return render_template('error.html', error_message="User not found.")
+
+            # Like recipe and store in the database
+            like_recipe_for_user(user_id, recipe_title, recipe_id)
+
+            # Redirect to the profile page after liking the recipe
+            return redirect(url_for('profile'))
+        except Exception as e:
+            logging.error(f"Error occurred while liking recipe: {str(e)}")
+            return render_template('error.html', error_message="An error occurred while liking the recipe.")
+    else:
+        return redirect(url_for('login'))
+
+def get_total_likes_for_recipe(recipe_id):
+    conn = sqlite3.connect('liked_recipes.db')
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM liked_recipes WHERE recipe_id = ?", (recipe_id,))
+    total_likes = c.fetchone()[0]
+    conn.close()
+    return total_likes
+
+conn = sqlite3.connect('liked_recipes.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS liked_recipes (
+             id INTEGER PRIMARY KEY,
+             user_id INTEGER NOT NULL,
+             recipe_title TEXT NOT NULL,
+             recipe_id INTEGER NOT NULL,
+             FOREIGN KEY (user_id) REFERENCES users (id),
+             FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+             )''')
+conn.commit()
+
+# Function to get liked recipes for a user
+def get_liked_recipes(user_id):
+    try:
+        conn = sqlite3.connect('liked_recipes.db')
+        c = conn.cursor()
+        c.execute("SELECT recipe_title, recipe_id FROM liked_recipes WHERE user_id = ?", (user_id,))
+        rows = c.fetchall()
+
+        # Convert rows to a list of dictionaries
+        liked_recipes = [{'recipe_id': row[1], 'title': row[0]} for row in rows]
+        
+        return liked_recipes
+    except sqlite3.Error as e:
+        print(f"Database error occurred: {e}")
+        return []
+    finally:
+        conn.close()
+
+def load_saved_recipes_data():
+    conn = sqlite3.connect('saved_recipes.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM saved_recipes")
+    rows = c.fetchall()
+    print("Fetched rows:", rows)  # Add this line to see what rows are fetched
+    conn.close()
+    
+    # Convert fetched data into a DataFrame
+    df = pd.DataFrame(rows, columns=['id', 'user_id', 'recipe_title', 'recipe_id'])
+    print("DataFrame shape:", df.shape)  # Add this line to see the shape of the DataFrame
+    return df  # Returning DataFrame instead of tuple
+
+
+# Function to preprocess saved recipes data
+def preprocess_data(saved_recipes):
+    # Convert fetched data into a DataFrame
+    df = pd.DataFrame(saved_recipes, columns=['id', 'user_id', 'recipe_title', 'recipe_id'])
+    
+    # Print the shape of the DataFrame
+    print("Shape of DataFrame (before preprocessing):", df.shape)
+    
+    # Drop the 'id' column if not needed
+    df.drop('id', axis=1, inplace=True)
+    
+    # Encode recipe_title using LabelEncoder if it contains categorical data
+    label_encoder = LabelEncoder()
+    df['recipe_title'] = label_encoder.fit_transform(df['recipe_title'])
+    
+    # Separate features and labels
+    X = df[['user_id', 'recipe_title']]
+    y = df['recipe_id']  # Use recipe_id as a label only if necessary
+    
+    # Print shapes of features and labels
+    print("Shape of X (features):", X.shape)
+    print("Shape of y (labels):", y.shape)
+    
+    # Split data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Print shapes of training and testing sets
+    print("Shape of X_train (training features):", X_train.shape)
+    print("Shape of X_test (testing features):", X_test.shape)
+    print("Shape of y_train (training labels):", y_train.shape)
+    print("Shape of y_test (testing labels):", y_test.shape)
+    
+    return X_train, X_test, y_train, y_test
+
+
+# Train item-item collaborative filtering model
+def train_item_item_collaborative_filtering_model(user_item_matrix):
+    # Convert DataFrame to numpy array
+    X = user_item_matrix.values
+    
+    # Compute item-item similarity matrix (cosine similarity)
+    item_sim_matrix = np.dot(X.T, X) / (np.sqrt(np.sum(X.T ** 2, axis=1)) * np.sqrt(np.sum(X ** 2, axis=0)))
+    
+    return item_sim_matrix
+
+
+# Train item-item collaborative filtering model
+def train_model(user_item_matrix):
+    # Convert DataFrame to numpy array
+    X = user_item_matrix.values
+    
+    # Compute item-item similarity matrix (cosine similarity)
+    item_sim_matrix = np.dot(X.T, X) / (np.sqrt(np.sum(X.T ** 2, axis=1)) * np.sqrt(np.sum(X ** 2, axis=0)))
+    
+    return item_sim_matrix
+
+# Generate recipe recommendations for the user
+def generate_recommendations(user_id, user_item_matrix, item_sim_matrix):
+    # Get user's recipe ratings from user-item matrix
+    user_ratings = user_item_matrix[user_id]
+    
+    # Calculate weighted average of similar items for each item rated by the user
+    recommendations = np.dot(item_sim_matrix, user_ratings)
+    
+    # Exclude items already rated by the user
+    recommendations[user_ratings != 0] = 0
+    
+    # Get indices of top N recommended items
+    top_n_indices = np.argsort(recommendations)[::-1][:10]
+    
+    return top_n_indices
+
+# Fetch recipe details from the database
+def fetch_recipe_details(recipe_ids):
+    conn = sqlite3.connect('saved_recipes.db')
+    c = conn.cursor()
+    recipe_details = []
+    for recipe_id in recipe_ids:
+        c.execute("SELECT recipe_title FROM saved_recipes WHERE recipe_id = ?", (recipe_id,))
+        title = c.fetchone()[0]
+        recipe_details.append({'recipe_id': recipe_id, 'recipe_title': title})
+    conn.close()
+    return recipe_details
+
+# Route for generating recommendations
+@app.route('/AIrecommendation')
+def get_recommendations():
+    if 'username' in session:
+        username = session['username']
+        
+        try:
+            # Load saved recipes data from the database
+            saved_recipes = load_saved_recipes_data()
+            
+            # Preprocess data for collaborative filtering
+            user_item_matrix = preprocess_data(saved_recipes)
+            
+            # Train item-item collaborative filtering model
+            item_sim_matrix = train_model(user_item_matrix)
+            
+            # Generate recommendations for the user
+            top_n_indices = generate_recommendations(user_id, user_item_matrix, train_item_item_collaborative_filtering_model)
+
+            
+            # Fetch recipe details for recommended items
+            recommended_recipes = fetch_recipe_details(top_n_indices)
+            
+            return render_template('AIrecommendation.html', recommended_recipes=recommended_recipes)
+        
+        except Exception as e:
+            error_message = f"An error occurred: {str(e)}"
+            return render_template('error.html', error_message=error_message)
+    
+    else:
+        return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True) 
+
+
