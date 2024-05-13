@@ -494,135 +494,58 @@ def get_liked_recipes(user_id):
     finally:
         conn.close()
 
-def load_saved_recipes_data():
-    conn = sqlite3.connect('saved_recipes.db')
-    c = conn.cursor()
-    c.execute("SELECT * FROM saved_recipes")
-    rows = c.fetchall()
-    print("Fetched rows:", rows)  # Add this line to see what rows are fetched
-    conn.close()
-    
-    # Convert fetched data into a DataFrame
-    df = pd.DataFrame(rows, columns=['id', 'user_id', 'recipe_title', 'recipe_id'])
-    print("DataFrame shape:", df.shape)  # Add this line to see the shape of the DataFrame
-    return df  # Returning DataFrame instead of tuple
+def fetch_similar_recipes(recipe_title):
+    conn = http.client.HTTPSConnection("spoonacular-recipe-food-nutrition-v1.p.rapidapi.com")
+    headers = {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
+    }
+    api_request_url = f"/recipes/complexSearch?query={quote(recipe_title)}&number=5"
+    conn.request("GET", api_request_url, headers=headers)
+    res = conn.getresponse()
+    data = res.read()
+    response_data = data.decode("utf-8")
+    try:
+        response_json = json.loads(response_data)
+        if 'results' in response_json:
+            # Extract recipe details from the response
+            similar_recipes = [{'title': recipe['title'], 'recipe_id': recipe['id']} for recipe in response_json['results']]
+            return similar_recipes
+    except Exception as e:
+        print(f"Error fetching similar recipes: {e}")
+        return []
 
-
-# Function to preprocess saved recipes data
-def preprocess_data(saved_recipes):
-    # Convert fetched data into a DataFrame
-    df = pd.DataFrame(saved_recipes, columns=['id', 'user_id', 'recipe_title', 'recipe_id'])
-    
-    # Print the shape of the DataFrame
-    print("Shape of DataFrame (before preprocessing):", df.shape)
-    
-    # Drop the 'id' column if not needed
-    df.drop('id', axis=1, inplace=True)
-    
-    # Encode recipe_title using LabelEncoder if it contains categorical data
-    label_encoder = LabelEncoder()
-    df['recipe_title'] = label_encoder.fit_transform(df['recipe_title'])
-    
-    # Separate features and labels
-    X = df[['user_id', 'recipe_title']]
-    y = df['recipe_id']  # Use recipe_id as a label only if necessary
-    
-    # Print shapes of features and labels
-    print("Shape of X (features):", X.shape)
-    print("Shape of y (labels):", y.shape)
-    
-    # Split data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    # Print shapes of training and testing sets
-    print("Shape of X_train (training features):", X_train.shape)
-    print("Shape of X_test (testing features):", X_test.shape)
-    print("Shape of y_train (training labels):", y_train.shape)
-    print("Shape of y_test (testing labels):", y_test.shape)
-    
-    return X_train, X_test, y_train, y_test
-
-
-# Train item-item collaborative filtering model
-def train_item_item_collaborative_filtering_model(user_item_matrix):
-    # Convert DataFrame to numpy array
-    X = user_item_matrix.values
-    
-    # Compute item-item similarity matrix (cosine similarity)
-    item_sim_matrix = np.dot(X.T, X) / (np.sqrt(np.sum(X.T ** 2, axis=1)) * np.sqrt(np.sum(X ** 2, axis=0)))
-    
-    return item_sim_matrix
-
-
-# Train item-item collaborative filtering model
-def train_model(user_item_matrix):
-    # Convert DataFrame to numpy array
-    X = user_item_matrix.values
-    
-    # Compute item-item similarity matrix (cosine similarity)
-    item_sim_matrix = np.dot(X.T, X) / (np.sqrt(np.sum(X.T ** 2, axis=1)) * np.sqrt(np.sum(X ** 2, axis=0)))
-    
-    return item_sim_matrix
-
-# Generate recipe recommendations for the user
-def generate_recommendations(user_id, user_item_matrix, item_sim_matrix):
-    # Get user's recipe ratings from user-item matrix
-    user_ratings = user_item_matrix[user_id]
-    
-    # Calculate weighted average of similar items for each item rated by the user
-    recommendations = np.dot(item_sim_matrix, user_ratings)
-    
-    # Exclude items already rated by the user
-    recommendations[user_ratings != 0] = 0
-    
-    # Get indices of top N recommended items
-    top_n_indices = np.argsort(recommendations)[::-1][:10]
-    
-    return top_n_indices
-
-# Fetch recipe details from the database
-def fetch_recipe_details(recipe_ids):
-    conn = sqlite3.connect('saved_recipes.db')
-    c = conn.cursor()
-    recipe_details = []
-    for recipe_id in recipe_ids:
-        c.execute("SELECT recipe_title FROM saved_recipes WHERE recipe_id = ?", (recipe_id,))
-        title = c.fetchone()[0]
-        recipe_details.append({'recipe_id': recipe_id, 'recipe_title': title})
-    conn.close()
-    return recipe_details
-
-# Route for generating recommendations
-@app.route('/AIrecommendation')
-def get_recommendations():
+@app.route('/AIrecommendation', methods=['GET'])
+def ai_recommendation():
     if 'username' in session:
         username = session['username']
+        user_id = get_user_id(username)  # Get the user ID
         
-        try:
-            # Load saved recipes data from the database
-            saved_recipes = load_saved_recipes_data()
-            
-            # Preprocess data for collaborative filtering
-            user_item_matrix = preprocess_data(saved_recipes)
-            
-            # Train item-item collaborative filtering model
-            item_sim_matrix = train_model(user_item_matrix)
-            
-            # Generate recommendations for the user
-            top_n_indices = generate_recommendations(user_id, user_item_matrix, train_item_item_collaborative_filtering_model)
+        # Fetch saved recipes for the user from the database
+        saved_recipes = get_saved_recipes(user_id)
+        
+        # If no saved recipes, return empty recommendations
+        if not saved_recipes:
+            return render_template('AIrecommendation.html', username=username, recommended_recipes=[])
 
-            
-            # Fetch recipe details for recommended items
-            recommended_recipes = fetch_recipe_details(top_n_indices)
-            
-            return render_template('AIrecommendation.html', recommended_recipes=recommended_recipes)
+        # Prepare a list to store recommended recipes
+        recommended_recipes = []
+
+        # Loop through each saved recipe to fetch similar recipes
+        for recipe in saved_recipes:
+            recipe_title = recipe['title']  # Change 'recipe_title' to 'title'
+            recipe_id = recipe['recipe_id']
+            # Query the Spoonacular API for similar recipes
+            similar_recipes = fetch_similar_recipes(recipe_title)
+            # Filter out saved recipes from the similar recipes
+            filtered_recipes = [similar_recipe for similar_recipe in similar_recipes if similar_recipe['title'] != recipe_title]
+            # Add the filtered similar recipes to the recommended_recipes list
+            recommended_recipes.extend(filtered_recipes)
         
-        except Exception as e:
-            error_message = f"An error occurred: {str(e)}"
-            return render_template('error.html', error_message=error_message)
-    
+        return render_template('AIrecommendation.html', username=username, recommended_recipes=recommended_recipes)
     else:
         return redirect(url_for('login'))
+
 
 if __name__ == '__main__':
     app.run(debug=True) 

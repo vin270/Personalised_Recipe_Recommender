@@ -6,20 +6,39 @@
             background-color: #89bbd7;
             color: #fff;
         }
+        .profile-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Adjust the height as needed */
+        }
+        .page-container {
+            padding: 20px;
+            text-align: center; /* Center-align the content */
+        }
+        .page-container ul {
+            padding-left: 0; /* Remove default padding from the lists */
+            list-style-type: none; /* Remove list bullets */
+        }
+        .page-container ul li {
+            margin-bottom: 10px; /* Add margin between list items */
+        }
     </style>
-    <div class="page-container" style="padding: 20px;">
-        <h2>Welcome, {{ username }}!</h2>
-        <h3>Saved Recipes:</h3>
-        <ul>
-            {% for recipe in saved_recipes %}
-                <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}" style="color: #fff;">{{ recipe['title'] }}</a></li>
-            {% endfor %}
-        </ul>
-        <h3>Liked Recipes:</h3>
-        <ul>
-            {% for recipe in liked_recipes %}
-                <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}" style="color: #fff;">{{ recipe['title'] }}</a></li>
-            {% endfor %}
-        </ul>
+    <div class="profile-container">
+        <div class="page-container">
+            <h2>Welcome, {{ username }}!</h2>
+            <h3>Saved Recipes:</h3>
+            <ul>
+                {% for recipe in saved_recipes %}
+                    <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}">{{ recipe['title'] }}</a></li>
+                {% endfor %}
+            </ul>
+            <h3>Liked Recipes:</h3>
+            <ul>
+                {% for recipe in liked_recipes %}
+                    <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}">{{ recipe['title'] }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 {% endblock %}

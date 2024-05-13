@@ -1,17 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Recommendations</title>
-</head>
-<body>
-    <h1>AI Recommendations</h1>
-    <p>Hello, {{ username }}! Here are some recipe recommendations for you:</p>
-    <ul>
-        {% for recipe in recommended_recipes %}
-            <li>{{ recipe.title }}</li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block title %}AI Recommendations{% endblock %}
+{% block body %}
+    <style>
+        body {
+            background-color: #89bbd7;
+            color: #fff;
+        }
+        .recommendation-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Adjust the height as needed */
+        }
+        .page-container {
+            padding: 20px;
+            text-align: center; /* Center-align the content */
+        }
+        .page-container ul {
+            padding-left: 0; /* Remove default padding from the lists */
+            list-style-type: none; /* Remove list bullets */
+        }
+        .page-container ul li {
+            margin-bottom: 10px; /* Add margin between list items */
+        }
+        .recipe-link {
+            color: #fff; /* Set link color to white */
+            text-decoration: underline; /* Add underline to links */
+            cursor: pointer; /* Change cursor to pointer on hover */
+        }
+    </style>
+    <div class="recommendation-container">
+        <div class="page-container">
+            <h1>AI Recommendations</h1>
+            <p>Hello, {{ username }}! Here are some recipe recommendations for you:</p>
+            <ul>
+                {% for recipe in recommended_recipes %}
+                    <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}">{{ recipe['title'] }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}
