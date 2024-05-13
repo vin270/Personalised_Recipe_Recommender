@@ -51,6 +51,15 @@
                 <li>{{ step['step'] }}</li>
             {% endfor %}
         </ol>
+        <!-- Display Nutritional Information -->
+        <h3>Nutritional Information:</h3>
+        <ul>
+            <li>Calories: {{ nutrition_info['calories'] }}</li>
+            <li>Fat: {{ nutrition_info['fat'] }}g</li>
+            <li>Protein: {{ nutrition_info['protein'] }}g</li>
+            <li>Carbohydrates: {{ nutrition_info['carbs'] }}g</li>
+            <!-- Add any other relevant nutritional information -->
+        </ul>
     </div>
 </body>
 </html>

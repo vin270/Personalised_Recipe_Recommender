@@ -118,8 +118,22 @@ def recipe_details(recipe_id):
             if name:
                 ingredients_with_quantities.append(name)
 
+    # Fetch nutritional information using the Spoonacular API
+    api_request_url_nutrition = f"/recipes/{recipe_id}/nutritionWidget.json"
+    conn.request("GET", api_request_url_nutrition, headers=headers)
+    res_nutrition = conn.getresponse()
+    data_nutrition = res_nutrition.read()
+    response_data_nutrition = data_nutrition.decode("utf-8")
+
+    nutrition_info = {}
+    try:
+        nutrition_info = json.loads(response_data_nutrition)
+    except Exception as e:
+        error_message = f"Error parsing nutritional information API response: {e}"
+        return render_template('error.html', error_message=error_message)
+
     total_likes = get_total_likes_for_recipe(recipe_id)
-    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, total_likes=total_likes)
+    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, nutrition_info=nutrition_info, total_likes=total_likes)
 
 
 
@@ -196,7 +210,23 @@ def random_recipe():
             if name:
                 ingredients_with_quantities.append(name)
 
-    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities)
+     # Fetch nutritional information using the Spoonacular API
+    api_request_url_nutrition = f"/recipes/{recipe_id}/nutritionWidget.json"
+    conn.request("GET", api_request_url_nutrition, headers=headers)
+    res_nutrition = conn.getresponse()
+    data_nutrition = res_nutrition.read()
+    response_data_nutrition = data_nutrition.decode("utf-8")
+
+    nutrition_info = {}
+    try:
+        nutrition_info = json.loads(response_data_nutrition)
+    except Exception as e:
+        error_message = f"Error parsing nutritional information API response: {e}"
+        return render_template('error.html', error_message=error_message)
+
+    total_likes = get_total_likes_for_recipe(recipe_id)
+    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, nutrition_info=nutrition_info, total_likes=total_likes)
+
 
 
 import sqlite3
@@ -545,7 +575,6 @@ def ai_recommendation():
         return render_template('AIrecommendation.html', username=username, recommended_recipes=recommended_recipes)
     else:
         return redirect(url_for('login'))
-
 
 if __name__ == '__main__':
     app.run(debug=True) 
