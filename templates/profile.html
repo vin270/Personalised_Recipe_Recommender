@@ -39,6 +39,12 @@
                     <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}">{{ recipe['title'] }}</a></li>
                 {% endfor %}
             </ul>
+            <h3>Disiked Recipes:</h3>
+            <ul>
+                {% for recipe in disliked_recipes %}
+                    <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}">{{ recipe['title'] }}</a></li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 {% endblock %}

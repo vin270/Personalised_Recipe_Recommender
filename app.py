@@ -133,7 +133,8 @@ def recipe_details(recipe_id):
         return render_template('error.html', error_message=error_message)
 
     total_likes = get_total_likes_for_recipe(recipe_id)
-    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, nutrition_info=nutrition_info, total_likes=total_likes)
+    total_dislikes = get_total_dislikes_for_recipe(recipe_id)  # Fetch total dislikes
+    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, nutrition_info=nutrition_info, total_likes=total_likes, total_dislikes=total_dislikes)
 
 
 
@@ -225,7 +226,8 @@ def random_recipe():
         return render_template('error.html', error_message=error_message)
 
     total_likes = get_total_likes_for_recipe(recipe_id)
-    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, nutrition_info=nutrition_info, total_likes=total_likes)
+    total_dislikes = get_total_dislikes_for_recipe(recipe_id)  # Fetch total dislikes
+    return render_template('recipe_details.html', recipe_details=recipe_details, instructions=instructions, ingredients_with_quantities=ingredients_with_quantities, nutrition_info=nutrition_info, total_likes=total_likes, total_dislikes=total_dislikes)
 
 
 
@@ -314,13 +316,12 @@ def profile():
         user_id = get_user_id(username)  # Assuming you have implemented this function
         if user_id is not None:
             saved_recipes = get_saved_recipes(user_id)
-            liked_recipes = get_liked_recipes(user_id)  # Fetch liked recipes
-            return render_template('profile.html', username=username, saved_recipes=saved_recipes, liked_recipes=liked_recipes)
+            liked_recipes = get_liked_recipes(user_id)
+            disliked_recipes = get_disliked_recipes(user_id)  # Fetch disliked recipes
+            return render_template('profile.html', username=username, saved_recipes=saved_recipes, liked_recipes=liked_recipes, disliked_recipes=disliked_recipes)
         else:
-            return render_template('profile.html', username=username, saved_recipes=[], liked_recipes=[])  # No recipes found for the user
+            return render_template('profile.html', username=username, saved_recipes=[], liked_recipes=[], disliked_recipes=[])  # No recipes found for the user
     return redirect(url_for('login'))
-
-
 
 @app.route('/logout')
 def logout():
@@ -523,6 +524,88 @@ def get_liked_recipes(user_id):
         return []
     finally:
         conn.close()
+
+conn = sqlite3.connect('disliked_recipes.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS disliked_recipes (
+             id INTEGER PRIMARY KEY,
+             user_id INTEGER NOT NULL,
+             recipe_title TEXT NOT NULL,
+             recipe_id INTEGER NOT NULL,
+             FOREIGN KEY (user_id) REFERENCES users (id),
+             FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+             )''')
+conn.commit()
+
+@app.route('/dislike_recipe', methods=['POST'])
+def dislike_recipe():
+    if 'username' in session:
+        username = session['username']
+        recipe_title = request.form.get('recipe_title')
+        recipe_id = request.form.get('recipe_id')
+
+        if not recipe_id:
+            return render_template('error.html', error_message="Invalid recipe ID.")
+
+        try:
+            # Get user ID from the database using the username
+            user_id = get_user_id(username)
+            if user_id is None:
+                return render_template('error.html', error_message="User not found.")
+
+            # Dislike recipe and store in the database
+            dislike_recipe_for_user(user_id, recipe_title, recipe_id)
+
+            # Redirect to the profile page after disliking the recipe
+            return redirect(url_for('profile'))
+        except Exception as e:
+            logging.error(f"Error occurred while disliking recipe: {str(e)}")
+            return render_template('error.html', error_message="An error occurred while disliking the recipe.")
+    else:
+        return redirect(url_for('login'))
+
+def dislike_recipe_for_user(user_id, recipe_title, recipe_id):
+    conn = sqlite3.connect('disliked_recipes.db')
+    c = conn.cursor()
+
+    # Check if the user has already disliked the recipe
+    c.execute("SELECT * FROM disliked_recipes WHERE user_id = ? AND recipe_id = ?", (user_id, recipe_id))
+    existing_dislike = c.fetchone()
+    if existing_dislike:
+        # User has already disliked the recipe, return without adding a new dislike
+        conn.close()
+        return
+    
+    # Insert new dislike record
+    c.execute("INSERT INTO disliked_recipes (user_id, recipe_title, recipe_id) VALUES (?, ?, ?)", (user_id, recipe_title, recipe_id))
+    conn.commit()
+    conn.close()
+
+def get_disliked_recipes(user_id):
+    try:
+        conn = sqlite3.connect('disliked_recipes.db')
+        c = conn.cursor()
+        c.execute("SELECT recipe_title, recipe_id FROM disliked_recipes WHERE user_id = ?", (user_id,))
+        rows = c.fetchall()
+
+        # Convert rows to a list of dictionaries
+        disliked_recipes = [{'recipe_id': row[1], 'title': row[0]} for row in rows]
+        
+        return disliked_recipes
+    except sqlite3.Error as e:
+        print(f"Database error occurred: {e}")
+        return []
+    finally:
+        conn.close()
+
+def get_total_dislikes_for_recipe(recipe_id):
+    conn = sqlite3.connect('disliked_recipes.db')
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM disliked_recipes WHERE recipe_id = ?", (recipe_id,))
+    total_dislikes = c.fetchone()[0]
+    conn.close()
+    return total_dislikes
+       
 
 def fetch_similar_recipes(recipe_title):
     conn = http.client.HTTPSConnection("spoonacular-recipe-food-nutrition-v1.p.rapidapi.com")

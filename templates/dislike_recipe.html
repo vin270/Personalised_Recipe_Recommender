@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dislike Recipe</title>
+</head>
+<body>
+    <h2>Dislike Recipe</h2>
+    <form action="/dislike_recipe" method="POST">
+        <input type="hidden" name="recipe_id" value="{{ recipe_id }}">
+        <input type="submit" value="Dislike">
+    </form>
+</body>
+</html>
