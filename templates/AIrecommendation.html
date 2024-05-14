@@ -32,7 +32,7 @@
     <div class="recommendation-container">
         <div class="page-container">
             <h1>AI Recommendations</h1>
-            <p>Hello, {{ username }}! Here are some recipe recommendations for you:</p>
+            <p>Hello, {{ username }}! Here are some recipe recommendations for you, based on the recipes you have saved:</p>
             <ul>
                 {% for recipe in recommended_recipes %}
                     <li><a href="{{ url_for('recipe_details', recipe_id=recipe['recipe_id']) }}">{{ recipe['title'] }}</a></li>
