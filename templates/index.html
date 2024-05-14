@@ -42,3 +42,28 @@
         </ul>
     {% endif %}
 {% endblock %}
+
+{% block footer %}
+    <style>
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #87d591;
+            padding: 20px 0;
+            text-align: center;
+        }
+        footer h3 {
+            color: white; /* Change the color of the h3 tag within the footer */
+        }
+    </style>
+
+    <footer>
+        <h3>Feedback</h3>
+        <form action="/add_feedback" method="post">
+            <textarea name="feedback" rows="4" cols="50" placeholder="Enter your feedback here"></textarea><br>
+            <input type="submit" value="Submit Feedback">
+        </form>
+    </footer>
+{% endblock %}

@@ -658,6 +658,39 @@ def ai_recommendation():
         return render_template('AIrecommendation.html', username=username, recommended_recipes=recommended_recipes)
     else:
         return redirect(url_for('login'))
+    
+@app.route('/add_feedback', methods=['POST'])
+def add_feedback():
+    if request.method == 'POST':
+        feedback = request.form['feedback']
+        if feedback:
+            save_feedback_to_database(feedback)
+            return redirect(url_for('home'))
+        else:
+            return render_template('index.html', error_message="Please provide feedback before submitting.")
+    else:
+        return redirect(url_for('home'))
+
+def save_feedback_to_database(feedback):
+    try:
+        conn = sqlite3.connect('feedback.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO feedback (content) VALUES (?)", (feedback,))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error saving feedback to database: {e}")
+    finally:
+        conn.close()
+
+
+conn = sqlite3.connect('feedback.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS feedback (
+             id INTEGER PRIMARY KEY,
+             content TEXT NOT NULL
+             )''')
+conn.commit()
+
 
 if __name__ == '__main__':
     app.run(debug=True) 
