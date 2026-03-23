@@ -64,8 +64,3 @@ Add user accounts and saved recipes
 Improve recommendation accuracy using machine learning
 Integrate external recipe APIs
 Deploy as a live web application
-
-
-Author
-Vindya Ashok
-BSc Computer Science
