@@ -1,6 +1,6 @@
-# AI Recipe Recommender
+AI Recipe Recommender
 
-## Overview
+Overview
 An AI-enhanced web application that recommends recipes based on user preferences and available ingredients.
 
 The system is designed to simplify meal planning by suggesting relevant recipes tailored to user input, improving convenience and personalisation.
@@ -9,14 +9,14 @@ Originally developed as part of an undergraduate project.
 
 ---
 
-## Key Highlights
+Key Highlights
 - Built a recommendation system based on user input and preferences  
 - Designed an interactive web interface for recipe discovery  
 - Implemented logic for filtering recipes based on ingredients  
 
 ---
 
-## Features
+Features
 - Recipe recommendations based on available ingredients  
 - Personalised suggestions using user preferences  
 - Dynamic filtering of recipes  
@@ -24,14 +24,14 @@ Originally developed as part of an undergraduate project.
 
 ---
 
-## Technologies Used
+Technologies Used
 - Python  
 - Flask (or replace with your framework)  
 - HTML / CSS  
 
 ---
 
-## Project Structure
+Project Structure
 - `app.py` – Main web application  
 - `src/` – Core recommendation logic  
 - `templates/` – Frontend HTML files  
@@ -40,9 +40,9 @@ Originally developed as part of an undergraduate project.
 
 ---
 
-## How to Run
+How to Run
 
-### Run the application
+Run the application
 ```bash
 python app.py
 
@@ -56,6 +56,8 @@ Output:
 Recommended recipes:
 Garlic Chicken Rice
 Spicy Chicken Bowl
+
+---
 
 ###Future Improvements
 Add user accounts and saved recipes
