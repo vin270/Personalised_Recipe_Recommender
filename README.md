@@ -26,17 +26,16 @@ Features
 
 Technologies Used
 - Python  
-- Flask (or replace with your framework)  
+- Flask  
 - HTML / CSS  
 
 ---
 
 Project Structure
-- `app.py` – Main web application  
-- `src/` – Core recommendation logic  
+- `app.py` – Main web application   
 - `templates/` – Frontend HTML files  
 - `static/` – CSS and assets  
-- `data/` – Recipe dataset (if included)  
+- `db/` – Recipe dataset  
 
 ---
 
